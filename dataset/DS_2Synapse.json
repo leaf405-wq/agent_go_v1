@@ -1,0 +1,70 @@
+{
+	"name": "DS_2Synapse",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSynapseLoad",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [
+			{
+				"name": "InvoiceNo",
+				"type": "varchar"
+			},
+			{
+				"name": "LineNo",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ItemCode",
+				"type": "varchar"
+			},
+			{
+				"name": "ItemDescription",
+				"type": "varchar"
+			},
+			{
+				"name": "Shipped",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "UnitPrice",
+				"type": "money",
+				"precision": 19,
+				"scale": 4
+			},
+			{
+				"name": "Extension",
+				"type": "money",
+				"precision": 19,
+				"scale": 4
+			},
+			{
+				"name": "UnitCost",
+				"type": "money",
+				"precision": 19,
+				"scale": 4
+			},
+			{
+				"name": "Comment",
+				"type": "varchar"
+			},
+			{
+				"name": "Warranty",
+				"type": "varchar"
+			},
+			{
+				"name": "Expiration ",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "z_dbo",
+			"table": "sage_invoiceitemserialno"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

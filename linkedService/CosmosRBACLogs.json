@@ -1,0 +1,16 @@
+{
+	"name": "CosmosRBACLogs",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "CosmosDb",
+		"typeProperties": {
+			"connectionString": "AccountEndpoint=https://cosmos-csi-idam-dev-sea.documents.azure.com:443/;Database=ProfileEntities;",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIyODAzNTdjYy1jOGI2LTQ5MWQtYTAyNS1kN2UyNWE4ODU0NzAiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "SelfHostedIntegrationRuntimeNew",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

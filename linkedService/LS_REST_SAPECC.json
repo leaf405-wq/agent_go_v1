@@ -1,0 +1,19 @@
+{
+	"name": "LS_REST_SAPECC",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "https://vhhkhd90ci.sap.carestream-int.com:44300",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Basic",
+			"userName": "ETLBODSDP",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJiZDc2NDY0My0zMTM1LTRlNGItOTI2MC0yZjJhNTcyNzlhYzIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "SelfHostedIntegrationRuntimeNew",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

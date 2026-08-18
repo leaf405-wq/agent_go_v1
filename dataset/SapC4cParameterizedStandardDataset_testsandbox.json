@@ -1,0 +1,24 @@
+{
+	"name": "SapC4cParameterizedStandardDataset_testsandbox",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SapCloudForCustomerStandardLinkedService_Test",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SapCloudForCustomerResource",
+		"schema": [],
+		"typeProperties": {
+			"path": {
+				"value": "@dataset().Name",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,1077 @@
+{
+	"name": "JF_ENT_ZOH000057_NeedClean",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get_BodsMeta_Data",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderStoredProcedureName": "[metadata].[get_metadata]",
+						"storedProcedureParameters": {
+							"is_init_only": {
+								"type": "Int32",
+								"value": {
+									"value": "@pipeline().parameters.is_init_only",
+									"type": "Expression"
+								}
+							},
+							"project": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.project",
+									"type": "Expression"
+								}
+							},
+							"schedule": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.schedule",
+									"type": "Expression"
+								}
+							},
+							"sync_type": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.sync_type",
+									"type": "Expression"
+								}
+							},
+							"src_system": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.src_system",
+									"type": "Expression"
+								}
+							},
+							"target_system": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.target_system",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_sqlsever_datalake",
+						"type": "DatasetReference",
+						"parameters": {
+							"tb_name": ".",
+							"schema": "metadata",
+							"db_name": "meta_config"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ByTable_Ingest",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get_BodsMeta_Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get_BodsMeta_Data').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copydata",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "sp_write_log",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SapOpenHubSource",
+									"excludeLastRequest": false
+								},
+								"sink": {
+									"type": "SqlServerSink",
+									"preCopyScript": {
+										"value": "DROP TABLE IF EXISTS @{concat('stage_bods','.',item().src_table_name)}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": true,
+									"tableOption": "autoCreate"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "OHREQUID",
+												"type": "Int32",
+												"physicalType": "I"
+											},
+											"sink": {
+												"name": "OHREQUID",
+												"type": "Int32",
+												"physicalType": "int"
+											}
+										},
+										{
+											"source": {
+												"name": "DATAPAKID",
+												"type": "Int32",
+												"physicalType": "I"
+											},
+											"sink": {
+												"name": "DATAPAKID",
+												"type": "Int32",
+												"physicalType": "int"
+											}
+										},
+										{
+											"source": {
+												"name": "RECORD",
+												"type": "Int32",
+												"physicalType": "I"
+											},
+											"sink": {
+												"name": "RECORD",
+												"type": "Int32",
+												"physicalType": "int"
+											}
+										},
+										{
+											"source": {
+												"name": "CALDAY",
+												"type": "String",
+												"physicalType": "D"
+											},
+											"sink": {
+												"name": "CALDAY",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZCUSTOMER",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZCUSTOMER",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZMATERIAL",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZMATERIAL",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "BILL_NUM",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "BILL_NUM",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "BILL_ITEM",
+												"type": "String",
+												"physicalType": "N"
+											},
+											"sink": {
+												"name": "BILL_ITEM",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "RECORDMODE",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "RECORDMODE",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZBILLTYPE",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZBILLTYPE",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "ITEM_CATEG",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ITEM_CATEG",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "DOC_NUMBER",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "DOC_NUMBER",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZPAYER",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZPAYER",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZSHIP_TO",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZSHIP_TO",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZCUSTSLS",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZCUSTSLS",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZSALESORG",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZSALESORG",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "PLANT",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "PLANT",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZPRFT_CTR",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZPRFT_CTR",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZPO_NUMBR",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZPO_NUMBR",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "GI_DATE",
+												"type": "String",
+												"physicalType": "D"
+											},
+											"sink": {
+												"name": "GI_DATE",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "CALMONTH",
+												"type": "String",
+												"physicalType": "N"
+											},
+											"sink": {
+												"name": "CALMONTH",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZOLDMATL",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZOLDMATL",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZINT_SIND",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZINT_SIND",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZOUT_IND",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZOUT_IND",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "INV_QTY",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "INV_QTY",
+												"type": "Decimal",
+												"physicalType": "decimal",
+												"scale": 18,
+												"precision": 38
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZAINDCLOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZAINDCLOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZAREBLOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZAREBLOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZBVALLOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZBVALLOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZGVAL_LOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZGVAL_LOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZLIPRCLOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZLIPRCLOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZPKTSLLOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZPKTSLLOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZRPT_QTY",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZRPT_QTY",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZSREBLOC",
+												"type": "Decimal",
+												"physicalType": "P"
+											},
+											"sink": {
+												"name": "ABIC_ZSREBLOC",
+												"physicalType": "decimal"
+											}
+										},
+										{
+											"source": {
+												"name": "SALES_UNIT",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "SALES_UNIT",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "LOC_CURRCY",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "LOC_CURRCY",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "UNIT",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "UNIT",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZADDRNRSH",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "ABIC_ZADDRNRSH",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "DOC_TYPE",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "DOC_TYPE",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "BILLTOPRTY",
+												"type": "String",
+												"physicalType": "C"
+											},
+											"sink": {
+												"name": "BILLTOPRTY",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "/BIC/ZORDER_DT",
+												"type": "String",
+												"physicalType": "D"
+											},
+											"sink": {
+												"name": "ABIC_ZORDER_DT",
+												"physicalType": "nvarchar"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_SapOpenHub_bw",
+									"type": "DatasetReference",
+									"parameters": {
+										"tb_name": {
+											"value": "@item().src_table_name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_sqlserver_gmat",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_name": "gmat",
+										"tb_name": {
+											"value": "@item().src_table_name",
+											"type": "Expression"
+										},
+										"schema_name": "stage_bods"
+									}
+								}
+							]
+						},
+						{
+							"name": "sp_updateerror_log",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Copydata",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[metadata].[sp_update_pipeline_log]",
+								"storedProcedureParameters": {
+									"error_msg": {
+										"value": {
+											"value": "@activity('Copydata').error.message",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"module_name": {
+										"value": {
+											"value": "@{concat(pipeline().RunId,'-',item().src_table_name)}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"pipeline_name": {
+										"value": "",
+										"type": "String"
+									},
+									"src_system": {
+										"value": "",
+										"type": "String"
+									},
+									"src_table_name": {
+										"value": "",
+										"type": "String"
+									},
+									"status": {
+										"value": "",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_datalake",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "meta_config"
+								}
+							}
+						},
+						{
+							"name": "sp_update_log",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "EXEC_SP",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[metadata].[sp_update_pipeline_log]",
+								"storedProcedureParameters": {
+									"error_msg": {
+										"value": {
+											"value": "@{REPLACE(activity('EXEC_SP').Error.Message,'''','')}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"module_name": {
+										"value": {
+											"value": "@{concat(pipeline().RunId,'-',item().src_table_name)}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"pipeline_name": {
+										"value": "",
+										"type": "String"
+									},
+									"src_system": {
+										"value": "",
+										"type": "String"
+									},
+									"src_table_name": {
+										"value": "",
+										"type": "String"
+									},
+									"status": {
+										"value": "",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_datalake",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "meta_config"
+								}
+							}
+						},
+						{
+							"name": "sp_write_log",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[metadata].[sp_write_pipeline_log]",
+								"storedProcedureParameters": {
+									"error_msg": {
+										"value": {
+											"value": "Start",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"module_name": {
+										"value": {
+											"value": "@{concat(pipeline().RunId,'-',item().src_table_name)}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"pipeline_name": {
+										"value": "",
+										"type": "String"
+									},
+									"src_system": {
+										"value": "",
+										"type": "String"
+									},
+									"src_table_name": {
+										"value": "",
+										"type": "String"
+									},
+									"status": {
+										"value": "",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_datalake",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "meta_config"
+								}
+							}
+						},
+						{
+							"name": "exec data sync",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Copydata",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[metadata].[sp_dynamicInsert]",
+								"storedProcedureParameters": {
+									"SourceSchema": {
+										"value": {
+											"value": "stage_bods",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"SourceTable": {
+										"value": {
+											"value": "@item().src_table_name",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"TargetSchema": {
+										"value": {
+											"value": "@item().target_schema_name",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"TargetTable": {
+										"value": {
+											"value": "@item().target_table_name",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"Is_Truncate_TB": {
+										"value": {
+											"value": "@int(item().is_truncate_tb)",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"IsLoaddate": {
+										"value": "1",
+										"type": "Int16"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_gmat",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "gmat"
+								}
+							}
+						},
+						{
+							"name": "sp_update_log_syncdata",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "exec data sync",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[metadata].[sp_update_pipeline_log]",
+								"storedProcedureParameters": {
+									"error_msg": {
+										"value": {
+											"value": "sync sucess",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"module_name": {
+										"value": {
+											"value": "@{concat(pipeline().RunId,'-',item().src_table_name)}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"pipeline_name": {
+										"value": "",
+										"type": "String"
+									},
+									"src_system": {
+										"value": "",
+										"type": "String"
+									},
+									"src_table_name": {
+										"value": "",
+										"type": "String"
+									},
+									"status": {
+										"value": "",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_datalake",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "meta_config"
+								}
+							}
+						},
+						{
+							"name": "sp_update_log_sync_error",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "exec data sync",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[metadata].[sp_update_pipeline_log]",
+								"storedProcedureParameters": {
+									"error_msg": {
+										"value": {
+											"value": "@{REPLACE(activity('exec data sync').Error.Message,'''','')}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"module_name": {
+										"value": {
+											"value": "@{concat(pipeline().RunId,'-',item().src_table_name)}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"pipeline_name": {
+										"value": "",
+										"type": "String"
+									},
+									"src_system": {
+										"value": "",
+										"type": "String"
+									},
+									"src_table_name": {
+										"value": "",
+										"type": "String"
+									},
+									"status": {
+										"value": "",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_datalake",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "meta_config"
+								}
+							}
+						},
+						{
+							"name": "EXEC_SP",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "exec data sync",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "METADATA.SYNC_JF_ENT_COPA"
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_sqlserver_gmat",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"db_name": "GMAT"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"is_init_only": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"project": {
+				"type": "string",
+				"defaultValue": "bods_JF_ENT_ZOH000057"
+			},
+			"schedule": {
+				"type": "string",
+				"defaultValue": "mon_to_fri_onceday_04_20"
+			},
+			"sync_type": {
+				"type": "string",
+				"defaultValue": "insert"
+			},
+			"target_system": {
+				"type": "string",
+				"defaultValue": "gmat"
+			},
+			"src_system": {
+				"type": "string",
+				"defaultValue": "bw"
+			}
+		},
+		"variables": {
+			"sp_list": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "BODS Ingest/Bods_Ingest_Delta/BW_Ingest_GMAT_Delta"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-08-10T07:19:15Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

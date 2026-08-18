@@ -1,0 +1,73 @@
+{
+	"name": "pipeline1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SapTableSource",
+						"rfcTableOptions": "MATNR LIKE 'SPAN7807%'",
+						"customRfcReadTableFunctionModule": "",
+						"partitionOption": "None",
+						"sapDataColumnDelimiter": "|"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_saptable_ecc",
+						"type": "DatasetReference",
+						"parameters": {
+							"tb_name": "MARA"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_blob_csv_ecc",
+						"type": "DatasetReference",
+						"parameters": {
+							"tbname": "mara_test"
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "SWO_Testing"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-08-05T02:32:57Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,50 @@
+{
+	"name": "LoadRBAClogs",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "CosmosDbSqlApiSource",
+						"query": "select\tc[\"$pk\"] as partitionKey,\r\n\tc.LogTimeStamp[\"$v\"] as RowKey,\r\n\tc.LogTimeStamp[\"$v\"] as Timestamp,\r\n\tc.Level[\"$v\"] as Level,\r\n\tc.logger[\"$v\"] as logger,\r\n\tc.threadId[\"$v\"] as threadId,\r\n\tc.machinename[\"$v\"] as machinename,\r\n\tc.username[\"$v\"] as username,\r\n\tLEFT(c.message[\"$v\"], 32000) as message\r\nfrom c",
+						"preferredRegions": [],
+						"pageSize": 10,
+						"detectDatetime": true
+					},
+					"sink": {
+						"type": "AzureTableSink",
+						"azureTableInsertType": "merge",
+						"writeBatchSize": 100
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "RbacLogs",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "idamlogs",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-03-30T04:50:56Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

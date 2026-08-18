@@ -1,0 +1,103 @@
+{
+	"name": "RbacLogs",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "CosmosRBACLogs",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbSqlApiCollection",
+		"schema": {
+			"type": "object",
+			"properties": {
+				"LogTimeStamp": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"Level": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"logger": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"threadId": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"machinename": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"username": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"message": {
+					"type": "object",
+					"properties": {
+						"$t": {
+							"type": "integer"
+						},
+						"$v": {
+							"type": "string"
+						}
+					}
+				},
+				"$pk": {
+					"type": "string"
+				},
+				"$id": {
+					"type": "string"
+				}
+			}
+		},
+		"typeProperties": {
+			"collectionName": "rbacLogs"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

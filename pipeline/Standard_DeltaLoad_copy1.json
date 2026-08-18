@@ -1,0 +1,329 @@
+{
+	"name": "Standard_DeltaLoad_copy1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Watermark_Lookup",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Stored procedure1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT * FROM [Stage].[Lookup_Table] WHERE Delta_Flag = 1 AND Api_Type = 'Standard'  AND DeltaType='D' AND Batch='@{pipeline().parameters.Batch}'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SqlServerParameterizedDataset",
+						"type": "DatasetReference",
+						"parameters": {
+							"Table_Name": ".",
+							"Schema": "."
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEachDeltaLoad",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Watermark_Lookup",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Watermark_Lookup').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 5,
+					"activities": [
+						{
+							"name": "C4CToAzureCopyDeltaload",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Stored procedure2",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SapCloudForCustomerSource",
+									"query": {
+										"value": "$filter= @{item().Delta_Column} gt datetimeoffset'@{item().Marker}' @{item().Query}",
+										"type": "Expression"
+									},
+									"httpRequestTimeout": "05:00:00"
+								},
+								"sink": {
+									"type": "SqlServerSink",
+									"writeBatchTimeout": "10:00:00",
+									"preCopyScript": {
+										"value": "DROP TABLE IF EXISTS @{concat('Stage.',item().Destination_TableName)}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": true,
+									"tableOption": "autoCreate"
+								},
+								"enableStaging": false,
+								"parallelCopies": 5
+							},
+							"inputs": [
+								{
+									"referenceName": "SapC4cParameterizedStandardDataset_testsandbox",
+									"type": "DatasetReference",
+									"parameters": {
+										"Name": "@item().Source_Collection"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "SqlServerParameterizedDataset",
+									"type": "DatasetReference",
+									"parameters": {
+										"Table_Name": "@item().Destination_TableName",
+										"Schema": "Stage"
+									}
+								}
+							]
+						},
+						{
+							"name": "Update Job Log",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"sqlReaderQuery": {
+										"value": "INSERT INTO dbo.C4C__JobLog (\n    JobName,\n    JobDate,\n    JobUser,\n    JobStatus,\n    CallingModule,\n    JobLevel\n) OUTPUT INSERTED.JobStatus Values (\n    '@{pipeline().Pipeline}',\n    '@{FormatDateTime(pipeline().TriggerTime,'yyyy-MM-dd HH:MM:ss.FFF')}',\n    'MSADF',\n    'Running',\n    '@{concat(pipeline().RunId,'-',item().Source_Collection)}',\n    '4'\n)",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "SqlServerParameterizedDataset",
+									"type": "DatasetReference",
+									"parameters": {
+										"Table_Name": ".",
+										"Schema": "."
+									}
+								},
+								"firstRowOnly": false
+							}
+						},
+						{
+							"name": "Stored procedure2",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Update Job Log",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[writejoblogentry_adf]",
+								"storedProcedureParameters": {
+									"CallingModule": {
+										"value": "ADF",
+										"type": "String"
+									},
+									"JobLevel": {
+										"value": null,
+										"type": "String"
+									},
+									"JobName": {
+										"value": "Standard_Deltaload",
+										"type": "String"
+									},
+									"JobRunID": {
+										"value": {
+											"value": "@pipeline().RunId",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"JobStatus": {
+										"value": {
+											"value": "@concat('Copy activity started for ',item().Destination_TableName)",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "SqlServerLinkedService",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Stored procedure1",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[writejoblogentry_adf]",
+					"storedProcedureParameters": {
+						"CallingModule": {
+							"value": "ADF",
+							"type": "String"
+						},
+						"JobLevel": {
+							"value": null,
+							"type": "String"
+						},
+						"JobName": {
+							"value": "Standard_Deltaload",
+							"type": "String"
+						},
+						"JobRunID": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"JobStatus": {
+							"value": "Job has started",
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "SqlServerLinkedService",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Stored procedure10",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "ForEachDeltaLoad",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[writejoblogentry_adf]",
+					"storedProcedureParameters": {
+						"CallingModule": {
+							"value": "ADF",
+							"type": "String"
+						},
+						"JobLevel": {
+							"value": null,
+							"type": "String"
+						},
+						"JobName": {
+							"value": "Standard_Deltaload",
+							"type": "String"
+						},
+						"JobRunID": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"JobStatus": {
+							"value": "Standard_Deltaload job has finished",
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "SqlServerLinkedService",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"concurrency": 5,
+		"parameters": {
+			"Batch": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Standard"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-07-28T02:50:45Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

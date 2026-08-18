@@ -1,0 +1,26 @@
+{
+	"name": "OracleDatabaseLinkedService",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "Oracle",
+		"version": "2.0",
+		"typeProperties": {
+			"server": "158.178.242.9:1521/rmspspdb.sub06081322251.vcnnprodsgmktsa.oraclevcn.com",
+			"authenticationType": "Basic",
+			"username": "msadf",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "AzureKeyVaultLinkedService",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "kv-rmsapp-password"
+			}
+		},
+		"connectVia": {
+			"referenceName": "SelfHostedIntegrationRuntimeNew",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
